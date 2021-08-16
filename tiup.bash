@@ -100,4 +100,13 @@ function must_cluster_tidbs()
 	echo "${tidbs}"
 }
 
-
+function must_cluster_pd()
+{
+	local name="${1}"
+	set +e
+	local pd=`tiup cluster display "${name}" 2>/dev/null | \
+		{ grep '\-\-\-\-\-\-\-$' -A 9999 || test $? = 1; } | \
+		awk '{if ($2=="pd") print $1}'`
+	set -e
+	echo "${pd}"
+}
