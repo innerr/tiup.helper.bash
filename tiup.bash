@@ -108,5 +108,39 @@ function must_cluster_pd()
 		{ grep '\-\-\-\-\-\-\-$' -A 9999 || test $? = 1; } | \
 		awk '{if ($2=="pd") print $1}'`
 	set -e
+	if [ -z "${pd}" ]; then
+		echo "[:(] no pd found in cluster '${name}'" >&2
+		exit 1
+	fi
 	echo "${pd}"
+}
+
+function must_pd_addr()
+{
+	local name="${1}"
+	set +e
+	local pd=`tiup cluster display "${name}" 2>/dev/null | \
+		{ grep '\-\-\-\-\-\-\-$' -A 9999 || test $? = 1; } | \
+		awk '{if ($2=="pd" && $6=="Up|L|UI") print $3":"$4}'`
+	set -e
+	if [ -z "${pd}" ]; then
+		echo "[:(] no pd found in cluster '${name}'" >&2
+		exit 1
+	fi
+	echo "${pd%/*}"
+}
+
+function must_prometheus_addr()
+{
+	local name="${1}"
+	set +e
+	local prom=`tiup cluster display "${name}" 2>/dev/null | \
+		{ grep '\-\-\-\-\-\-\-$' -A 9999 || test $? = 1; } | \
+		awk '{if ($2=="prometheus") print $3":"$4}'`
+	set -e
+	if [ -z "${prom}" ]; then
+		echo "[:(] no prometheus found in cluster '${name}'" >&2
+		exit 1
+	fi
+	echo "${prom}"
 }
