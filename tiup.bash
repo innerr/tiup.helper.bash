@@ -7,6 +7,17 @@ function cluster_meta()
 		{ grep "^${name} " || test $? = 1; }
 }
 
+function must_cluster_version()
+{
+    local name="${1}"
+    local version=`tiup cluster display "${name}" --version 2>/dev/null`
+    if [ $? != 0 ]; then
+        echo "[:(] no such cluster exists, please ensure the cluster name '${name}'"
+        exit 1
+    fi
+    echo "${version}"
+}
+
 function cluster_exist()
 {
 	local name="${1}"
@@ -130,6 +141,20 @@ function must_pd_addr()
 	echo "${pd%/*}"
 }
 
+function must_pd_leader_id()
+{
+    local name="${1}"
+    set +e
+    local pd=`tiup cluster display "${name}" -R pd --json 2>/dev/null | \
+        jq --raw-output ".instances[]|select(.status | contains(\"L\"))|.id"`
+    set -e
+    if [ -z "${pd}" ]; then
+        echo "[:(] no pd leader found in cluster '${name}'" >&2
+        exit 1
+    fi
+    echo "${pd}"
+}
+
 function must_prometheus_addr()
 {
 	local name="${1}"
@@ -143,4 +168,19 @@ function must_prometheus_addr()
 		exit 1
 	fi
 	echo "${prom}"
+}
+
+function must_store_id()
+{
+    local pd_leader_id="${1}"
+    local version="${2}"
+    local address="${3}"
+
+    local store_id=`tiup ctl:${version} pd -u "${pd_leader_id}" store 2>/dev/null|\
+        jq --raw-output ".stores[]|select(.store.address==\"${address}\").store.id"`
+    if [ -z "${store_id}" ]; then
+        echo "[:(] couldn't found the store id of the host '${host}'"
+        exit 1
+    fi
+    echo "${store_id}"
 }
