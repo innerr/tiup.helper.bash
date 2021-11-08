@@ -100,6 +100,50 @@ function must_cluster_tidbs()
 	echo "${tidbs}"
 }
 
+function cluster_tikvs()
+{
+	local name="${1}"
+	set +e
+	local tikvs=`tiup cluster display "${name}" 2>/dev/null | \
+		{ grep '\-\-\-\-\-\-\-$' -A 9999 || test $? = 1; } | \
+		awk '{if ($2=="tikv") print $1}'`
+	set -e
+	echo "${tikvs}"
+}
+
+function must_cluster_tikvs()
+{
+	local name="${1}"
+	local tikvs=`cluster_tikvs "${name}"`
+	if [ -z "${tikvs}" ]; then
+		echo "[:(] no tikv found in cluster '${name}'" >&2
+		exit 1
+	fi
+	echo "${tikvs}"
+}
+
+function cluster_tiflashs()
+{
+	local name="${1}"
+	set +e
+	local tiflashs=`tiup cluster display "${name}" 2>/dev/null | \
+		{ grep '\-\-\-\-\-\-\-$' -A 9999 || test $? = 1; } | \
+		awk '{if ($2=="tiflash") print $1}'`
+	set -e
+	echo "${tiflashs}"
+}
+
+function must_cluster_tiflashs()
+{
+	local name="${1}"
+	local tiflashs=`cluster_tiflashs "${name}"`
+	if [ -z "${tiflashs}" ]; then
+		echo "[:(] no tiflash found in cluster '${name}'" >&2
+		exit 1
+	fi
+	echo "${tiflashs}"
+}
+
 function must_cluster_pd()
 {
 	local name="${1}"
