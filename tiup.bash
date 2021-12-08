@@ -189,7 +189,12 @@ function must_pd_leader_id()
 {
     local name="${1}"
     set +e
-    local pd=`tiup cluster display "${name}" -R pd --json 2>/dev/null | \
+    if [[ `tiup cluster --version | awk '/tiup/{print $3}'` < '1.7.0' ]]; then
+        format='--json'
+    else
+        format='--format json'
+    fi
+    local pd=`tiup cluster display "${name}" -R pd ${format} 2>/dev/null | \
         jq --raw-output ".instances[]|select(.status | contains(\"L\"))|.id"`
     set -e
     if [ -z "${pd}" ]; then
